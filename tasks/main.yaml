@@ -1,0 +1,135 @@
+---
+
+- name: Add EPEL YUM repo
+  yum_repository:
+    name: epel
+    description: EPEL YUM repo
+    baseurl: "{{ clamav_epel_yumrepo_url }}"
+    gpgcheck: no
+    params: "{{ clamav_epel_yumrepo_params }}"
+  when: clamav_epel_install
+  tags:
+    - clamav_pkg
+
+- name: Install ClamAV package
+  package:
+    name: "{{ item }}"
+  with_items: "{{ clamav_pkgs }}"
+  notify:
+    - Restart Clamd service
+  tags:
+    - clamav_pkg
+
+- name: Configure Clamd
+  template:
+    src: clamd.conf.j2
+    dest: "{{ clamav_clamd_file }}"
+  notify:
+    - Restart Clamd service
+  tags:
+    - clamav_config
+
+- name: Configure FreshClam
+  template:
+    src: freshclam.conf.j2
+    dest: "{{ clamav_freshclam_file }}"
+  tags:
+    - clamav_config
+
+- name: Check if Clamd log file exists
+  stat:
+    path: "{{ clamav_clamd_log_file }}"
+  register: clamav_clamd_log_check_result
+  failed_when: false
+  changed_when: false
+  tags:
+    - clamav_log
+
+- name: Create Clamd log file if it doesn't exist
+  file:
+    path: "{{ clamav_clamd_log_file }}"
+    state: touch
+    mode: 0664
+    owner: root
+    group: "{{ clamav_clamd_user }}"
+  when: >
+    clamav_clamd_log_check_result is defined and
+    not clamav_clamd_log_check_result.stat.exists
+  tags:
+    - cmalav_log
+
+- name: Check if FreshClam log file exists
+  stat:
+    path: "{{ clamav_freshclam_update_log_file }}"
+  register: clamav_freshclam_log_check_result
+  failed_when: false
+  changed_when: false
+  tags:
+    - clamav_log
+
+- name: Create FreshClam log file if it doesn't exist
+  file:
+    path: "{{ clamav_freshclam_update_log_file }}"
+    state: touch
+    mode: 0664
+    owner: root
+    group: "{{ clamav_freshclam_database_owner }}"
+  when: >
+    clamav_freshclam_log_check_result is defined and
+    not clamav_freshclam_log_check_result.stat.exists
+  tags:
+    - cmalav_log
+
+- name: Check the age of the ClamAV DB
+  shell: >
+    if (( $(date +%s) - $(stat -c %Y {{ clamav_clamd_database_directory }}/main.cvd 2>/dev/null || echo 0) > {{ clamav_db_age }} * 86400 )); then
+      exit 1
+    else
+      exit 0
+    fi
+  register: clamav_db_age_check_result
+  failed_when: false
+  changed_when: false
+  tags:
+    - clamav_db
+
+- name: Update ClamAV DB
+  shell: "{{ clamav_db_update_command }}"
+  when: >
+    clamav_db_age_check_result.rc or
+    clamav_db_update_force
+  tags:
+    - clamav_db
+
+- name: Setup Clamd Scan cron job
+  cron:
+    name: Clamd Scan
+    special_time: "{{ clamav_scan_cron_time }}"
+    job: "{{ clamav_scan_cron_job }}"
+  when: clamav_scan_cron
+  tags:
+    - clamav_cron
+
+- name: Setup FreshClam cron job
+  cron:
+    name: FreshClam
+    special_time: "{{ clamav_freshclam_cron_time }}"
+    job: "{{ clamav_freshclam_cron_job }}"
+  when: clamav_scan_cron
+  tags:
+    - clamav_cron
+
+- name: Enable ClamAV service
+  service:
+    name: "{{ clamav_service }}"
+    enabled: yes
+  tags:
+    - clamav_service
+
+- name: Start ClamAV service
+  service:
+    name: "{{ clamav_service }}"
+    state: started
+  register: clamav_service_started
+  tags:
+    - clamav_service

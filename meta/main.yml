@@ -1,0 +1,16 @@
+---
+
+galaxy_info:
+  author: Jiri Tyr
+  description: A role that installs Clamd.
+  license: MIT
+  min_ansible_version: 2.1
+  platforms:
+    - name: EL
+      versions:
+        - 6
+        - 7
+  categories:
+    - monitoring
+dependencies:
+  - config_encoder_filters
