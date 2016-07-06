@@ -159,7 +159,9 @@ clamav_freshclam_database_owner: "{{
   if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
   else
     'clam' }}"
-clamav_freshclam_database_mirror: database.clamav.net
+clamav_freshclam_database_mirror:
+  - database.clamav.net
+  - database.clamav.net
 
 # Default FreshClam config
 clamav_freshclam_config__default:

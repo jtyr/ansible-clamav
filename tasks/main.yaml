@@ -53,8 +53,10 @@
     owner: root
     group: "{{ clamav_clamd_user }}"
   when: >
-    clamav_clamd_log_check_result is defined and
-    not clamav_clamd_log_check_result.stat.exists
+    clamav_clamd_log_check_result is defined and (
+        not clamav_clamd_log_check_result.stat.exists or
+        clamav_clamd_log_check_result.stat.gr_name != clamav_clamd_user
+    )
   tags:
     - cmalav_log
 
@@ -75,8 +77,10 @@
     owner: root
     group: "{{ clamav_freshclam_database_owner }}"
   when: >
-    clamav_freshclam_log_check_result is defined and
-    not clamav_freshclam_log_check_result.stat.exists
+    clamav_freshclam_log_check_result is defined and (
+        not clamav_freshclam_log_check_result.stat.exists or
+        clamav_freshclam_log_check_result.stat.gr_name != clamav_freshclam_database_owner
+    )
   tags:
     - cmalav_log
 
