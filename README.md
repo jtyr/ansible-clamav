@@ -70,11 +70,13 @@ clamav_service: "{{
   else
     'clamd' }}"
 
-
 # Max age of the ClamAV DB before update (in days)
 clamav_db_age: 7
 
-# Force ClamAV DB update
+# Whether to run ClamAV DB update if it's too old
+clamav_db_update_run: no
+
+# Force ClamAV to update the DB
 clamav_db_update_force: no
 
 # ClamAV DB update command
@@ -95,7 +97,7 @@ clamav_scan_cron_job: sleep $[RANDOM\%{{ clamav_scan_cron_job_delay }}]m ; /usr/
 
 
 # Whether to setup FreshClam cron job
-clamav_freshvlam_cron: "{{ clamav_scan_cron }}"
+clamav_freshclam_cron: "{{ clamav_scan_cron }}"
 
 # How often to run the Clamd Scan [hourly|daily|weekly]
 clamav_freshclam_cron_time: "{{ clamav_scan_cron_time }}"
@@ -206,7 +208,9 @@ clamav_freshclam_database_owner: "{{
   if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
   else
     'clam' }}"
-clamav_freshclam_database_mirror: database.clamav.net
+clamav_freshclam_database_mirror:
+  - database.clamav.net
+  - database.clamav.net
 
 # Default FreshClam config
 clamav_freshclam_config__default:

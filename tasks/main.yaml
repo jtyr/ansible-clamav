@@ -36,6 +36,20 @@
   tags:
     - clamav_config
 
+- name: Check if the log directories exist
+  file:
+    path: "{{ item | dirname }}"
+    state: directory
+    mode: 0775
+    owner: root
+    group: "{{ clamav_clamd_user }}"
+  when: item | dirname != '/var/log'
+  with_items:
+    - "{{ clamav_clamd_log_file }}"
+    - "{{ clamav_freshclam_update_log_file }}"
+  tags:
+    - clamav_log
+
 - name: Check if Clamd log file exists
   stat:
     path: "{{ clamav_clamd_log_file }}"
@@ -100,6 +114,7 @@
 - name: Update ClamAV DB
   shell: "{{ clamav_db_update_command }}"
   when: >
+    clamav_db_update_run and
     clamav_db_age_check_result.rc or
     clamav_db_update_force
   tags:
@@ -119,7 +134,7 @@
     name: FreshClam
     special_time: "{{ clamav_freshclam_cron_time }}"
     job: "{{ clamav_freshclam_cron_job }}"
-  when: clamav_scan_cron
+  when: clamav_freshclam_cron
   tags:
     - clamav_cron
 
