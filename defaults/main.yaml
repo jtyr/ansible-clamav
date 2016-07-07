@@ -23,6 +23,7 @@ clamav_service: "{{
   else
     'clamd' }}"
 
+
 # Max age of the ClamAV DB before update (in days)
 clamav_db_age: 7
 
@@ -62,6 +63,35 @@ clamav_freshclam_cron_job_delay: "{{ clamav_scan_cron_job_delay }}"
 clamav_freshclam_cron_job: sleep $[RANDOM\%{{ clamav_freshclam_cron_job_delay }}]m ; /usr/bin/freshclam --quiet
 
 
+# ClamAV user and group
+clamav_user: "{{
+    'clamscan'
+  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
+  else
+    'clam' }}"
+clamav_group: "{{ clamav_user }}"
+
+
+# Log dir permissions (if not /var/log)
+clamav_log_dir_mode: 0750
+
+# Log dir permissions (if not /var/log)
+clamav_log_file_mode: 0640
+
+
+# ClamAV directories
+clamav_log_dir: "{{
+    '/var/log'
+  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
+  else
+    '/var/log/clamav' }}"
+clamav_run_dir: "{{
+    '/var/run/clamd.scan'
+  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
+  else
+    '/var/run/clamav' }}"
+
+
 # Location of the Clamd config
 clamav_clamd_file: "{{
     '/etc/clamd.d/scan.conf'
@@ -70,37 +100,21 @@ clamav_clamd_file: "{{
     '/etc/clamd.conf' }}"
 
 # Values of the default options in the Clamd config
-clamav_clamd_log_file: "{{
-    '/var/log/clamd.log'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    '/var/log/clamav/clamd.log' }}"
+clamav_clamd_log_file: "{{ clamav_log_dir ~ '/clamd.log' }}"
 clamav_clamd_log_file_max_size: 0
 clamav_clamd_log_time: "yes"
 clamav_clamd_log_syslog: "yes"
-clamav_clamd_pid_file: "{{
-    '/var/run/clamd.scan/clamd.pid'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    '/var/run/clamav/clamd.pid' }}"
+clamav_clamd_pid_file: "{{ clamav_run_dir ~ '/clamd.pid' }}"
 clamav_clamd_temporary_directory: /var/tmp
 clamav_clamd_database_directory: /var/lib/clamav
-clamav_clamd_local_socket: "{{
-    '/var/run/clamd.scan/clamd.sock'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    '/var/run/clamav/clamd.sock' }}"
+clamav_clamd_local_socket: "{{ clamav_run_dir ~ '/clamd.sock' }}"
 clamav_clamd_fix_stale_socket: "yes"
 clamav_clamd_tcp_socket: 3310
 clamav_clamd_tcp_addr: 127.0.0.1
 clamav_clamd_max_connection_queue_length: 30
 clamav_clamd_max_threads: 50
 clamav_clamd_read_timeout: 300
-clamav_clamd_user: "{{
-    'clamscan'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    'clam' }}"
+clamav_clamd_user: "{{ clamav_user }}"
 clamav_clamd_allow_supplementary_groups: "yes"
 clamav_clamd_scan_pe: "yes"
 clamav_clamd_scan_elf: "yes"
@@ -149,18 +163,10 @@ clamav_clamd_config: "{{
 clamav_freshclam_file: /etc/freshclam.conf
 
 # Values of options in the FreshClam config
-clamav_freshclam_update_log_file: "{{
-    '/var/log/freshclam.log'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    '/var/log/clamav/freshclam.log' }}"
+clamav_freshclam_update_log_file: "{{ clamav_log_dir ~ '/freshclam.log' }}"
 clamav_freshclam_log_syslog: "{{ clamav_clamd_log_syslog }}"
 clamav_freshclam_database_directory: "{{ clamav_clamd_database_directory }}"
-clamav_freshclam_database_owner: "{{
-    'clamupdate'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    'clam' }}"
+clamav_freshclam_database_owner: "{{ clamav_user }}"
 clamav_freshclam_database_mirror:
   - database.clamav.net
   - database.clamav.net

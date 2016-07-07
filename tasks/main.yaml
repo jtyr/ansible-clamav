@@ -40,9 +40,9 @@
   file:
     path: "{{ item | dirname }}"
     state: directory
-    mode: 0775
-    owner: root
-    group: "{{ clamav_clamd_user }}"
+    mode: "{{ clamav_log_dir_mode }}"
+    owner: "{{ clamav_user }}"
+    group: "{{ clamav_group }}"
   when: item | dirname != '/var/log'
   with_items:
     - "{{ clamav_clamd_log_file }}"
@@ -59,17 +59,21 @@
   tags:
     - clamav_log
 
+- debug:
+    var: clamav_clamd_log_check_result
+
 - name: Create Clamd log file if it doesn't exist
   file:
     path: "{{ clamav_clamd_log_file }}"
     state: touch
-    mode: 0664
-    owner: root
-    group: "{{ clamav_clamd_user }}"
+    mode: "{{ clamav_log_file_mode }}"
+    owner: "{{ clamav_user }}"
+    group: "{{ clamav_group }}"
   when: >
     clamav_clamd_log_check_result is defined and (
         not clamav_clamd_log_check_result.stat.exists or
-        clamav_clamd_log_check_result.stat.gr_name != clamav_clamd_user
+        clamav_clamd_log_check_result.stat.pw_name != clamav_user or
+        clamav_clamd_log_check_result.stat.gr_name != clamav_group
     )
   tags:
     - cmalav_log
@@ -87,13 +91,14 @@
   file:
     path: "{{ clamav_freshclam_update_log_file }}"
     state: touch
-    mode: 0664
-    owner: root
-    group: "{{ clamav_freshclam_database_owner }}"
+    mode: "{{ clamav_log_file_mode }}"
+    owner: "{{ clamav_user }}"
+    group: "{{ clamav_group }}"
   when: >
     clamav_freshclam_log_check_result is defined and (
         not clamav_freshclam_log_check_result.stat.exists or
-        clamav_freshclam_log_check_result.stat.gr_name != clamav_freshclam_database_owner
+        clamav_freshclam_log_check_result.stat.pw_name != clamav_user or
+        clamav_freshclam_log_check_result.stat.gr_name != clamav_group
     )
   tags:
     - cmalav_log
