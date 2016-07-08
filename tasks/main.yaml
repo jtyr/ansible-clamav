@@ -59,9 +59,6 @@
   tags:
     - clamav_log
 
-- debug:
-    var: clamav_clamd_log_check_result
-
 - name: Create Clamd log file if it doesn't exist
   file:
     path: "{{ clamav_clamd_log_file }}"

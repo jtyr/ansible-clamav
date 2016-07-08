@@ -54,7 +54,7 @@ clamav_epel_install: yes
 clamav_epel_yumrepo_url: "{{ yumrepo_epel_url | default('https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/') }}"
 
 # Additional EPEL YUM repo params
-clamav_epel_yumrepo_params: {}
+clamav_epel_yumrepo_params: "{{ yumrepo_epel_params | default({}) }}"
 
 # Package to be installed (explicit version can be specified here)
 clamav_pkgs: "{{
@@ -120,10 +120,10 @@ clamav_group: "{{ clamav_user }}"
 
 
 # Log dir permissions (if not /var/log)
-clamav_log_dir_mode: 0750
+clamav_log_dir_mode: 0770
 
-# Log dir permissions (if not /var/log)
-clamav_log_file_mode: 0640
+# Log file permissions
+clamav_log_file_mode: 0660
 
 
 # ClamAV directories
