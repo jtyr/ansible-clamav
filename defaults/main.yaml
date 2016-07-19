@@ -28,7 +28,7 @@ clamav_service: "{{
 clamav_db_age: 7
 
 # Whether to run ClamAV DB update if it's too old
-clamav_db_update_run: no
+clamav_db_update_run: yes
 
 # Force ClamAV to update the DB
 clamav_db_update_force: no
