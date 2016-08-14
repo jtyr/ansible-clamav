@@ -102,10 +102,10 @@
 
 - name: Check the age of the ClamAV DB
   shell: >
-    if (( $(date +%s) - $(stat -c %Y {{ clamav_clamd_database_directory }}/main.cvd 2>/dev/null || echo 0) > {{ clamav_db_age }} * 86400 )); then
-      exit 1
+    if (( $(date "+%s") - $(date -d "$(sigtool -i {{ clamav_clamd_database_directory }}/daily.cvd 2>/dev/null | grep -Po '(?<=^Build time: ).*' || echo '2016-01-01')" "+%s") > {{ clamav_db_age }} * 86400 )); then
+      exit 1;
     else
-      exit 0
+      exit 0;
     fi
   register: clamav_db_age_check_result
   failed_when: false
@@ -114,7 +114,13 @@
     - clamav_db
 
 - name: Update ClamAV DB
-  shell: "{{ clamav_db_update_command }}"
+  # First delete all DBs if the daily DB is older than 90 days because the
+  # mirror server keeps only last 90 daily files.
+  shell: >
+    if (( $(date "+%s") - $(date -d "$(sigtool -i {{ clamav_clamd_database_directory }}/daily.cvd 2>/dev/null | grep -Po '(?<=^Build time: ).*' || echo '2016-01-01')" "+%s") > 90 )); then
+      rm -f {{ clamav_clamd_database_directory }}/*.cvd;
+    fi;
+    {{ clamav_db_update_command }}
   when: >
     clamav_db_update_run and
     clamav_db_age_check_result.rc or
