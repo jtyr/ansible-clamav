@@ -100,6 +100,16 @@
   tags:
     - cmalav_log
 
+- name: Check if the DB directories exist
+  file:
+    path: "{{ clamav_clamd_database_directory }}"
+    state: directory
+    mode: "{{ clamav_db_dir_mode }}"
+    owner: "{{ clamav_user }}"
+    group: "{{ clamav_group }}"
+  tags:
+    - clamav_db
+
 - name: Check the age of the ClamAV DB
   shell: >
     if (( $(date "+%s") - $(date -d "$(sigtool -i {{ clamav_clamd_database_directory }}/daily.cvd 2>/dev/null | grep -Po '(?<=^Build time: ).*' || echo '2016-01-01')" "+%s") > {{ clamav_db_age }} * 86400 )); then
