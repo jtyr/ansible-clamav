@@ -78,6 +78,9 @@ clamav_log_dir_mode: 0770
 # Log file permissions
 clamav_log_file_mode: 0660
 
+# DB dir permissions
+clamav_db_dir_mode: 0770
+
 
 # ClamAV directories
 clamav_log_dir: "{{
