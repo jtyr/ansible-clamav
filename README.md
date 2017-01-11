@@ -48,10 +48,13 @@ Role variables
 
 ```
 # Whether to install EPEL YUM repo
-clamav_epel_install: yes
+clamav_epel_install: "{{ yumrepo_epel_install | default(true) }}"
 
 # EPEL YUM repo URL
 clamav_epel_yumrepo_url: "{{ yumrepo_epel_url | default('https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/') }}"
+
+# EPEL YUM repo GPG key
+clamavx_epel_yumrepo_gpgkey: "{{ yumrepo_epel_gpgkey | default('https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-$releasever') }}"
 
 # Additional EPEL YUM repo params
 clamav_epel_yumrepo_params: "{{ yumrepo_epel_params | default({}) }}"

@@ -11,6 +11,6 @@ galaxy_info:
         - 6
         - 7
   categories:
-    - monitoring
+    - security
 dependencies:
   - config_encoder_filters

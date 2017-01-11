@@ -1,11 +1,16 @@
 ---
 
+- name: Test distribution
+  assert:
+    that: >
+      ansible_os_family == "RedHat"
+
 - name: Add EPEL YUM repo
   yum_repository:
     name: epel
     description: EPEL YUM repo
     baseurl: "{{ clamav_epel_yumrepo_url }}"
-    gpgcheck: no
+    gpgkey: "{{ clamav_epel_yumrepo_gpgkey }}"
     params: "{{ clamav_epel_yumrepo_params }}"
   when: clamav_epel_install
   tags:
