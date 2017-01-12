@@ -2,7 +2,7 @@
 
 galaxy_info:
   author: Jiri Tyr
-  description: A role that installs Clamd.
+  description: A role that installs ClamAV.
   license: MIT
   min_ansible_version: 2.1
   platforms:
