@@ -54,7 +54,7 @@ clamav_epel_install: "{{ yumrepo_epel_install | default(true) }}"
 clamav_epel_yumrepo_url: "{{ yumrepo_epel_url | default('https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/') }}"
 
 # EPEL YUM repo GPG key
-clamavx_epel_yumrepo_gpgkey: "{{ yumrepo_epel_gpgkey | default('https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-$releasever') }}"
+clamav_epel_yumrepo_gpgkey: "{{ yumrepo_epel_gpgkey | default('https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-$releasever') }}"
 
 # Additional EPEL YUM repo params
 clamav_epel_yumrepo_params: "{{ yumrepo_epel_params | default({}) }}"
@@ -83,9 +83,46 @@ clamav_db_update_run: yes
 # Force ClamAV to update the DB
 clamav_db_update_force: no
 
-# ClamAV DB update command
-clamav_db_update_command: freshclam
+# Default ClamAV DB update command options
+clamav_db_update_command_options__default:
+  - --quiet
+  - --no-warnings
 
+# Custom ClamAV DB update command options
+clamav_db_update_command_options__custom: []
+
+# Final ClamAV DB update command options
+clamav_db_update_command_options: "{{
+  clamav_db_update_command_options__default +
+  clamav_db_update_command_options__custom }}"
+
+# ClamAV DB update command
+clamav_db_update_command: /usr/bin/freshclam {{ clamav_db_update_command_options | join(' ') }}
+
+
+# Path to the ClamScan file
+clamav_scan_log_file: "{{ clamav_log_dir }}/clamscan_{{ clamav_scan_cron_time }}.log"
+
+# Root path where to start to scan
+clamav_scan_root: /
+
+# Default ClamAV scan command options
+clamav_scan_command_options__default:
+  - --config-file={{ clamav_clamd_file }}
+  - --log={{ clamav_scan_log_file }}
+  - --fdpass
+  - --infected
+
+# Default ClamAV scan command options
+clamav_scan_command_options__custom: []
+
+# Default ClamAV scan command options
+clamav_scan_command_options: "{{
+  clamav_scan_command_options__default +
+  clamav_scan_command_options__custom }}"
+
+# ClamAV scan command
+clamav_scan_command: /usr/bin/clamdscan {{ clamav_scan_command_options | join(' ') }} {{ clamav_scan_root }}
 
 # Whether to setup Clamd Scan cron job
 clamav_scan_cron: yes
@@ -97,7 +134,7 @@ clamav_scan_cron_time: daily
 clamav_scan_cron_job_delay: 45
 
 # Command to run as a cron job for the Clamd Scan
-clamav_scan_cron_job: sleep $[RANDOM\%{{ clamav_scan_cron_job_delay }}]m ; /usr/bin/clamscan --infected --recursive=yes --log=/var/log/clamav/clamscan_{{ clamav_scan_cron_time }}.log /
+clamav_scan_cron_job: sleep $[RANDOM\%{{ clamav_scan_cron_job_delay }}]m ; {{ clamav_scan_command }}
 
 
 # Whether to setup FreshClam cron job
@@ -110,7 +147,7 @@ clamav_freshclam_cron_time: "{{ clamav_scan_cron_time }}"
 clamav_freshclam_cron_job_delay: "{{ clamav_scan_cron_job_delay }}"
 
 # Command to run as a cron job for the Clamd Scan
-clamav_freshclam_cron_job: sleep $[RANDOM\%{{ clamav_freshclam_cron_job_delay }}]m ; /usr/bin/freshclam --quiet
+clamav_freshclam_cron_job: sleep $[RANDOM\%{{ clamav_freshclam_cron_job_delay }}]m ; {{ clamav_db_update_command }}
 
 
 # ClamAV user and group
@@ -176,6 +213,12 @@ clamav_clamd_scan_ole2: "yes"
 clamav_clamd_scan_mail: "yes"
 clamav_clamd_scan_archive: "yes"
 clamav_clamd_archive_block_encrypted: "no"
+clamav_clamd_exclude_path__default:
+  - ^/(proc|sys|dev)/
+clamav_clamd_exclude_path__custom: []
+clamav_clamd_exclude_path: "{{
+  clamav_clamd_exclude_path__default +
+  clamav_clamd_exclude_path__custom }}"
 
 # Default Clamd config
 clamav_clamd_config__default:
@@ -202,6 +245,7 @@ clamav_clamd_config__default:
   ScanMail: "{{ clamav_clamd_scan_mail }}"
   ScanArchive: "{{ clamav_clamd_scan_archive }}"
   ArchiveBlockEncrypted: "{{ clamav_clamd_archive_block_encrypted }}"
+  ExcludePath: "{{ clamav_clamd_exclude_path }}"
 
 # Custom Clamd config
 clamav_clamd_config__custom: {}

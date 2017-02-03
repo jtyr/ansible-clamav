@@ -80,6 +80,31 @@
   tags:
     - cmalav_log
 
+- name: Check if ClamScan log file exists
+  stat:
+    path: "{{ clamav_scan_log_file }}"
+  register: clamav_scan_log_check_result
+  failed_when: false
+  changed_when: false
+  tags:
+    - clamav_log
+
+- name: Create ClamScan log file if it doesn't exist
+  file:
+    path: "{{ clamav_scan_log_file }}"
+    state: touch
+    mode: "{{ clamav_log_file_mode }}"
+    owner: "{{ clamav_user }}"
+    group: "{{ clamav_group }}"
+  when: >
+    clamav_scan_log_check_result is defined and (
+        not clamav_scan_log_check_result.stat.exists or
+        clamav_scan_log_check_result.stat.pw_name != clamav_user or
+        clamav_scan_log_check_result.stat.gr_name != clamav_group
+    )
+  tags:
+    - cmalav_log
+
 - name: Check if FreshClam log file exists
   stat:
     path: "{{ clamav_freshclam_update_log_file }}"
