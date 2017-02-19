@@ -38,6 +38,12 @@ Examples
     clamav_freshclam_config__custom:
       LogVerbose: "yes"
       LogRotate: "yes"
+  # In order to run correctly on systems with SELinux enabled, the
+  # 'libsemanage-python' package must also be installed before this role is
+  # executed...
+  pre_tasks:
+    - package:
+        name: libsemanage-python # for SELinux-enabled systems...
   roles:
     - clamav
 ```

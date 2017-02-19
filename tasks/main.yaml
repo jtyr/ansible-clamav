@@ -12,7 +12,7 @@
     baseurl: "{{ clamav_epel_yumrepo_url }}"
     gpgkey: "{{ clamav_epel_yumrepo_gpgkey }}"
     params: "{{ clamav_epel_yumrepo_params }}"
-  when: clamav_epel_install
+  when: clamav_epel_install == true
   tags:
     - clamav_pkg
 
@@ -25,10 +25,52 @@
   tags:
     - clamav_pkg
 
+- name: Check whether SELinux is enabled
+  command: sestatus
+  ignore_errors: yes
+  register: clamav_selinux_check_result
+  tags:
+    - clamav_selinux
+
+- name: Configure SELinux for clamav
+  seboolean:
+    name: "{{ item }}"
+    state: yes
+    persistent: yes
+  with_items:
+    - antivirus_can_scan_system
+    - antivirus_use_jit
+  when: >
+    clamav_selinux_check_result is defined and
+    clamav_selinux_check_result.stdout.find('disabled') == -1
+  tags:
+    - clamav_selinux
+
 - name: Configure Clamd
   template:
     src: clamd.conf.j2
     dest: "{{ clamav_clamd_file }}"
+  notify:
+    - Restart Clamd service
+  tags:
+    - clamav_config
+
+- name: Create Clamd Service directory
+  file:
+    path: "{{ clamav_clamd_daemon_file | dirname }}"
+    group: root
+    mode: 0755
+    owner: root
+    state: directory
+  when: >
+    ansible_service_mgr == 'systemd'
+  tags:
+    - clamav_config
+
+- name: Configure Clamd Service
+  template:
+    src: clamd.defaults.j2
+    dest: "{{ clamav_clamd_daemon_file }}"
   notify:
     - Restart Clamd service
   tags:
@@ -78,7 +120,7 @@
         clamav_clamd_log_check_result.stat.gr_name != clamav_group
     )
   tags:
-    - cmalav_log
+    - clamav_log
 
 - name: Check if ClamScan log file exists
   stat:
@@ -103,7 +145,7 @@
         clamav_scan_log_check_result.stat.gr_name != clamav_group
     )
   tags:
-    - cmalav_log
+    - clamav_log
 
 - name: Check if FreshClam log file exists
   stat:
@@ -128,7 +170,7 @@
         clamav_freshclam_log_check_result.stat.gr_name != clamav_group
     )
   tags:
-    - cmalav_log
+    - clamav_log
 
 - name: Check if the DB directories exist
   file:
@@ -173,7 +215,7 @@
     name: Clamd Scan
     special_time: "{{ clamav_scan_cron_time }}"
     job: "{{ clamav_scan_cron_job }}"
-  when: clamav_scan_cron
+  when: clamav_scan_cron == true
   tags:
     - clamav_cron
 
@@ -182,7 +224,7 @@
     name: FreshClam
     special_time: "{{ clamav_freshclam_cron_time }}"
     job: "{{ clamav_freshclam_cron_job }}"
-  when: clamav_freshclam_cron
+  when: clamav_freshclam_cron == true
   tags:
     - clamav_cron
 
