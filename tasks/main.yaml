@@ -165,6 +165,7 @@
     clamav_db_update_run and
     clamav_db_age_check_result.rc or
     clamav_db_update_force
+  async: 600
   tags:
     - clamav_db
 
