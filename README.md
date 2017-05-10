@@ -67,17 +67,17 @@ clamav_epel_yumrepo_params: "{{ yumrepo_epel_params | default({}) }}"
 
 # Package to be installed (explicit version can be specified here)
 clamav_pkgs: "{{
-    ['clamav', 'clamav-update', 'clamav-scanner-systemd']
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    ['clamd'] }}"
+  ['clamav', 'clamav-update', 'clamav-scanner-systemd']
+    if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
+    else
+  ['clamd'] }}"
 
 # Clamav service name
 clamav_service: "{{
-    'clamd@scan'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    'clamd' }}"
+  'clamd@scan'
+    if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
+    else
+  'clamd' }}"
 
 
 # Max age of the ClamAV DB before update (in days)
@@ -158,10 +158,10 @@ clamav_freshclam_cron_job: sleep $[RANDOM\%{{ clamav_freshclam_cron_job_delay }}
 
 # ClamAV user and group
 clamav_user: "{{
-    'clamscan'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    'clam' }}"
+  'clamscan'
+    if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
+    else
+  'clam' }}"
 clamav_group: "{{ clamav_user }}"
 
 
@@ -176,24 +176,66 @@ clamav_db_dir_mode: 0770
 
 
 # ClamAV directories
-clamav_log_dir: "{{
-    '/var/log'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    '/var/log/clamav' }}"
+clamav_log_dir: /var/log/clamav
 clamav_run_dir: "{{
-    '/var/run/clamd.scan'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    '/var/run/clamav' }}"
+  '/var/run/clamd.scan'
+    if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
+    else
+  '/var/run/clamav' }}"
+
+
+# Clamd's Deamon nice level
+clamav_clamd_daemon_nicelevel: 0
+
+# Location of the Clamd daemon service config
+clamav_clamd_daemon_file: "{{
+  '/etc/systemd/system/clamd@scan.service.d/override.conf'
+    if ansible_service_mgr == 'systemd'
+    else
+  '/etc/sysconfig/clamd'
+    if ansible_os_family == 'RedHat'
+    else
+  '/etc/default/clamd' }}"
+
+# Default Clamd Daemon sysv config
+clamav_clamd_daemon_sysv_config__default:
+  NICELEVEL: "{{ clamav_clamd_daemon_nicelevel | int }}"
+
+# Custom Clamd Daemon sysv init config
+clamav_clamd_daemon_sysv_config__custom: {}
+
+# Final Clamd Daemon sysv init config
+clamav_clamd_daemon_sysv_config: "{{
+  clamav_clamd_daemon_sysv_config__default.update(clamav_clamd_daemon_sysv_config__custom) }}{{
+  clamav_clamd_daemon_sysv_config__default }}"
+
+# Default Clamd Daemon systemd config
+clamav_clamd_daemon_systemd_config__default:
+  Service:
+    Nice: "{{ clamav_clamd_daemon_nicelevel | int }}"
+
+# Custom Clamd Daemon systemd config
+clamav_clamd_daemon_systemd_config__custom: {}
+
+# Final Clamd Daemon systemd config
+clamav_clamd_daemon_systemd_config: "{{
+  clamav_clamd_daemon_systemd_config__default.update(clamav_clamd_daemon_systemd_config__custom) }}{{
+  clamav_clamd_daemon_systemd_config__default }}"
+
+# Select the generated configuration from above to deploy
+clamav_clamd_daemon_config: "{{
+  clamav_clamd_daemon_systemd_config
+    if ansible_service_mgr == 'systemd'
+    else
+  clamav_clamd_daemon_sysv_config }}"
 
 
 # Location of the Clamd config
 clamav_clamd_file: "{{
-    '/etc/clamd.d/scan.conf'
-  if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
-  else
-    '/etc/clamd.conf' }}"
+  '/etc/clamd.d/scan.conf'
+    if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int >= 7
+    else
+  '/etc/clamd.conf' }}"
 
 # Values of the default options in the Clamd config
 clamav_clamd_log_file: "{{ clamav_log_dir ~ '/clamd.log' }}"

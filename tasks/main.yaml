@@ -27,7 +27,8 @@
 
 - name: Check whether SELinux is enabled
   command: sestatus
-  ignore_errors: yes
+  failed_when: false
+  changed_when: false
   register: clamav_selinux_check_result
   tags:
     - clamav_selinux
