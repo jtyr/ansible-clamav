@@ -18,8 +18,7 @@
 
 - name: Install ClamAV package
   package:
-    name: "{{ item }}"
-  with_items: "{{ clamav_pkgs }}"
+    name: "{{ clamav_pkgs }}"
   notify:
     - Restart Clamd service
   tags:
