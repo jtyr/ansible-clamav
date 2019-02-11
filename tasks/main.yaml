@@ -13,6 +13,9 @@
     gpgkey: "{{ clamav_epel_yumrepo_gpgkey }}"
     params: "{{ clamav_epel_yumrepo_params }}"
   when: clamav_epel_install == true
+  register: result
+  until: result is succeeded
+  retries: "{{ clamav_network_max_retries }}"
   tags:
     - clamav_pkg
 
@@ -22,6 +25,9 @@
   with_items: "{{ clamav_pkgs }}"
   notify:
     - Restart Clamd service
+  register: result
+  until: result is succeeded
+  retries: "{{ clamav_network_max_retries }}"
   tags:
     - clamav_pkg
 
@@ -214,6 +220,9 @@
     clamav_db_update_run and
     clamav_db_age_check_result.rc or
     clamav_db_update_force
+  register: result
+  until: result is succeeded
+  retries: "{{ clamav_network_max_retries }}"
   tags:
     - clamav_db
 

@@ -1,8 +1,6 @@
 ---
-
 # Whether to install EPEL YUM repo
 clamav_epel_install: "{{ yumrepo_epel_install | default(true) }}"
-
 # EPEL YUM repo URL
 clamav_epel_yumrepo_url: "{{ yumrepo_epel_url | default('https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/') }}"
 
@@ -11,6 +9,9 @@ clamav_epel_yumrepo_gpgkey: "{{ yumrepo_epel_gpgkey | default('https://dl.fedora
 
 # Additional EPEL YUM repo params
 clamav_epel_yumrepo_params: "{{ yumrepo_epel_params | default({}) }}"
+
+# In the event of network congestion
+clamav_network_max_retries: 0
 
 # Package to be installed (explicit version can be specified here)
 clamav_pkgs: "{{
