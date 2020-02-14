@@ -25,13 +25,24 @@
   tags:
     - clamav_pkg
 
-- name: Check whether SELinux is enabled
-  command: sestatus
-  failed_when: false
-  changed_when: false
-  register: clamav_selinux_check_result
-  tags:
-    - clamav_selinux
+- name: Check SELinux status
+  block:
+    - name: Check SELinux status file existence
+      stat:
+        path: /etc/selinux/config
+      register: clamav_selinux_status_file
+
+    - name: Read SELinux status file
+      slurp:
+        src: /etc/selinux/config
+      register: clamav_selinux_status_file_contents
+      when: clamav_selinux_status_file.stat.exists
+
+    - name: Parse SELinux status file
+      set_fact: clamav_selinux_status="{{ clamav_selinux_status_file_contents['content'] | b64decode | regex_search('^SELINUX=(.+)$') }}"
+      when:
+        - clamav_selinux_status_file.stat.exists
+        - clamav_selinux_status_file_contents is defined
 
 - name: Configure SELinux for clamav
   seboolean:
@@ -41,9 +52,9 @@
   with_items:
     - antivirus_can_scan_system
     - antivirus_use_jit
-  when: >
-    clamav_selinux_check_result is defined and
-    clamav_selinux_check_result.stdout.find('disabled') == -1
+  when:
+    - clamav_selinux_status is defined
+    - clamav_selinux_status != "disabled"
   tags:
     - clamav_selinux
 
