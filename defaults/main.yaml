@@ -1,6 +1,8 @@
 ---
+
 # Whether to install EPEL YUM repo
 clamav_epel_install: "{{ yumrepo_epel_install | default(true) }}"
+
 # EPEL YUM repo URL
 clamav_epel_yumrepo_url: "{{ yumrepo_epel_url | default('https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/') }}"
 
@@ -12,6 +14,12 @@ clamav_epel_yumrepo_params: "{{ yumrepo_epel_params | default({}) }}"
 
 # In the event of network congestion
 clamav_network_max_retries: 0
+
+# ClamAV operating as client-only
+clamav_client_only: false
+
+# Queried clamav version in tasks/main.yml
+clamav_version: 0.999.0
 
 # Package to be installed (explicit version can be specified here)
 clamav_pkgs: "{{
@@ -66,13 +74,14 @@ clamav_scan_command_options__default:
   - --log={{ clamav_scan_log_file }}
   - --fdpass
   - --infected
+  - "{{ clamav_client_only | ternary('--stream', False) }}"
 
 # Default ClamAV scan command options
 clamav_scan_command_options__custom: []
 
 # Default ClamAV scan command options
 clamav_scan_command_options: "{{
-  clamav_scan_command_options__default +
+  clamav_scan_command_options__default | reject('sameas', False) | list +
   clamav_scan_command_options__custom }}"
 
 # ClamAV scan command
@@ -92,7 +101,7 @@ clamav_scan_cron_job: sleep $[RANDOM\%{{ clamav_scan_cron_job_delay }}]m ; {{ cl
 
 
 # Whether to setup FreshClam cron job
-clamav_freshclam_cron: "{{ clamav_scan_cron }}"
+clamav_freshclam_cron: "{{ clamav_scan_cron and not clamav_client_only}}"
 
 # How often to run the Clamd Scan [hourly|daily|weekly]
 clamav_freshclam_cron_time: "{{ clamav_scan_cron_time }}"
@@ -193,7 +202,7 @@ clamav_clamd_log_syslog: "yes"
 clamav_clamd_pid_file: "{{ clamav_run_dir ~ '/clamd.pid' }}"
 clamav_clamd_temporary_directory: /var/tmp
 clamav_clamd_database_directory: /var/lib/clamav
-clamav_clamd_local_socket: "{{ clamav_run_dir ~ '/clamd.sock' }}"
+clamav_clamd_local_socket: "{{ clamav_client_only | ternary(False, clamav_run_dir ~ '/clamd.sock') }}"
 clamav_clamd_fix_stale_socket: "yes"
 clamav_clamd_tcp_socket: 3310
 clamav_clamd_tcp_addr: 127.0.0.1
@@ -233,10 +242,10 @@ clamav_clamd_config__default:
   MaxThreads: "{{ clamav_clamd_max_threads }}"
   ReadTimeout: "{{ clamav_clamd_read_timeout }}"
   User: "{{ clamav_clamd_user }}"
-  AllowSupplementaryGroups: "{{ clamav_clamd_allow_supplementary_groups }}"
+  AllowSupplementaryGroups: "{{ (clamav_version is version('0.100','<')) | ternary(clamav_clamd_allow_supplementary_groups, False) }}"
   ScanPE: "{{ clamav_clamd_scan_pe }}"
   ScanELF: "{{ clamav_clamd_scan_elf }}"
-  DetectBrokenExecutables: "{{ clamav_clamd_detect_broken_executables }}"
+  DetectBrokenExecutables: "{{ (clamav_version is version('0.100','<')) | ternary(clamav_clamd_detect_broken_executables, False) }}"
   ScanOLE2: "{{ clamav_clamd_scan_ole2 }}"
   ScanMail: "{{ clamav_clamd_scan_mail }}"
   ScanArchive: "{{ clamav_clamd_scan_archive }}"
@@ -249,7 +258,7 @@ clamav_clamd_config__custom: {}
 # Final Clamd config
 clamav_clamd_config: "{{
   clamav_clamd_config__default.update(clamav_clamd_config__custom) }}{{
-  clamav_clamd_config__default }}"
+  clamav_clamd_config__default | dict2items | rejectattr('value', 'sameas', False) | list | items2dict }}"
 
 
 # Location of the FreshClam config
@@ -278,4 +287,4 @@ clamav_freshclam_config__custom: {}
 # Final FreshClam config
 clamav_freshclam_config: "{{
   clamav_freshclam_config__default.update(clamav_freshclam_config__custom) }}{{
-  clamav_freshclam_config__default }}"
+  clamav_freshclam_config__default | dict2items | rejectattr('value', 'sameas', False) | list | items2dict }}"

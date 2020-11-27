@@ -1,5 +1,4 @@
 ---
-
 - name: Test distribution
   assert:
     that: >
@@ -52,6 +51,14 @@
     clamav_selinux_check_result.stdout.find('disabled') == -1
   tags:
     - clamav_selinux
+
+- name: Query clamav version
+  command: clamav-config --version
+  register: v
+  changed_when: false
+
+- name: Set clamav_version
+  set_fact: clamav_version="{{ v.stdout }}"
 
 - name: Configure Clamd
   template:
@@ -247,7 +254,7 @@
 - name: Enable ClamAV service
   service:
     name: "{{ clamav_service }}"
-    enabled: yes
+    enabled: "{{ not clamav_client_only }}"
   tags:
     - clamav_service
 
@@ -256,5 +263,6 @@
     name: "{{ clamav_service }}"
     state: started
   register: clamav_service_started
+  when: not clamav_client_only
   tags:
     - clamav_service
