@@ -247,7 +247,7 @@
     name: FreshClam
     special_time: "{{ clamav_freshclam_cron_time }}"
     job: "{{ clamav_freshclam_cron_job }}"
-  when: clamav_freshclam_cron == true
+    state: "{{ (clamav_freshclam_cron == true) | ternary('present', 'absent') }}"
   tags:
     - clamav_cron
 
