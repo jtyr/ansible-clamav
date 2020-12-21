@@ -233,16 +233,16 @@
   tags:
     - clamav_db
 
-- name: Setup Clamd Scan cron job
+- name: "{{ (clamav_scan_cron == true) | ternary('Setup', 'Remove') }} Clamd Scan cron job"
   cron:
     name: Clamd Scan
     special_time: "{{ clamav_scan_cron_time }}"
     job: "{{ clamav_scan_cron_job }}"
-  when: clamav_scan_cron == true
+    state: "{{ (clamav_scan_cron == true) | ternary('present', 'absent') }}"
   tags:
     - clamav_cron
 
-- name: Setup FreshClam cron job
+- name: "{{ (clamav_freshclam_cron == true) | ternary('Setup', 'Remove') }} FreshClam cron job"
   cron:
     name: FreshClam
     special_time: "{{ clamav_freshclam_cron_time }}"
@@ -251,7 +251,7 @@
   tags:
     - clamav_cron
 
-- name: Enable ClamAV service
+- name: "{{ not clamav_client_only | ternary('Enable', 'Disable') }} ClamAV service"
   service:
     name: "{{ clamav_service }}"
     enabled: "{{ not clamav_client_only }}"

@@ -18,9 +18,6 @@ clamav_network_max_retries: 0
 # ClamAV operating as client-only
 clamav_client_only: false
 
-# Queried clamav version in tasks/main.yml
-clamav_version: 0.999.0
-
 # Package to be installed (explicit version can be specified here)
 clamav_pkgs: "{{
   ['clamav', 'clamav-update', 'clamav-scanner-systemd']
