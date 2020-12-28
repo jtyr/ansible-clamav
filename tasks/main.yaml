@@ -251,7 +251,7 @@
   tags:
     - clamav_cron
 
-- name: "{{ not clamav_client_only | ternary('Enable', 'Disable') }} ClamAV service"
+- name: "{{ (not clamav_client_only) | ternary('Enable', 'Disable') }} ClamAV service"
   service:
     name: "{{ clamav_service }}"
     enabled: "{{ not clamav_client_only }}"
