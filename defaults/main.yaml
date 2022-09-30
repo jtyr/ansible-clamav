@@ -85,7 +85,8 @@ clamav_scan_command_options: "{{
 clamav_scan_command: /usr/bin/clamdscan {{ clamav_scan_command_options | join(' ') }} {{ clamav_scan_root }}
 
 # Whether to setup Clamd Scan cron job
-clamav_scan_cron: yes
+# Superseded by clamav-update package
+clamav_scan_cron: no
 
 # How often to run the Clamd Scan [hourly|daily|weekly]
 clamav_scan_cron_time: daily
