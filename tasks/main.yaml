@@ -61,9 +61,11 @@
   set_fact: clamav_version="{{ v.stdout }}"
 
 - name: Configure Clamd
-  template:
-    src: clamd.conf.j2
-    dest: "{{ clamav_clamd_file }}"
+  blockinfile:
+    path: "{{ clamav_clamd_file }}"
+    content: "{{ clamav_clamd_config | encode_ini(delimiter=' ') }}"
+    insertbefore: BOF
+    create: yes
   notify:
     - Restart Clamd service
   tags:
@@ -82,18 +84,22 @@
     - clamav_config
 
 - name: Configure Clamd Service
-  template:
-    src: clamd.defaults.j2
-    dest: "{{ clamav_clamd_daemon_file }}"
+  blockinfile:
+    path: "{{ clamav_clamd_daemon_file }}"
+    content: "{{ clamav_clamd_daemon_config | encode_ini }}"
+    insertbefore: BOF
+    create: yes
   notify:
     - Restart Clamd service
   tags:
     - clamav_config
 
 - name: Configure FreshClam
-  template:
-    src: freshclam.conf.j2
-    dest: "{{ clamav_freshclam_file }}"
+  blockinfile:
+    path: "{{ clamav_freshclam_file }}"
+    content: "{{ clamav_freshclam_config | encode_ini(delimiter=' ') }}"
+    insertbefore: BOF
+    create: yes
   tags:
     - clamav_config
 
