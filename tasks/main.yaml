@@ -1,5 +1,4 @@
 ---
-
 - name: Test distribution
   assert:
     that: >
@@ -13,6 +12,9 @@
     gpgkey: "{{ clamav_epel_yumrepo_gpgkey }}"
     params: "{{ clamav_epel_yumrepo_params }}"
   when: clamav_epel_install == true
+  register: result
+  until: result is succeeded
+  retries: "{{ clamav_network_max_retries }}"
   tags:
     - clamav_pkg
 
@@ -22,6 +24,9 @@
   with_items: "{{ clamav_pkgs }}"
   notify:
     - Restart Clamd service
+  register: result
+  until: result is succeeded
+  retries: "{{ clamav_network_max_retries }}"
   tags:
     - clamav_pkg
 
@@ -47,10 +52,20 @@
   tags:
     - clamav_selinux
 
+- name: Query clamav version
+  command: clamav-config --version
+  register: v
+  changed_when: false
+
+- name: Set clamav_version
+  set_fact: clamav_version="{{ v.stdout }}"
+
 - name: Configure Clamd
-  template:
-    src: clamd.conf.j2
-    dest: "{{ clamav_clamd_file }}"
+  blockinfile:
+    path: "{{ clamav_clamd_file }}"
+    content: "{{ clamav_clamd_config | encode_ini(delimiter=' ') }}"
+    insertbefore: BOF
+    create: yes
   notify:
     - Restart Clamd service
   tags:
@@ -69,18 +84,22 @@
     - clamav_config
 
 - name: Configure Clamd Service
-  template:
-    src: clamd.defaults.j2
-    dest: "{{ clamav_clamd_daemon_file }}"
+  blockinfile:
+    path: "{{ clamav_clamd_daemon_file }}"
+    content: "{{ clamav_clamd_daemon_config | encode_ini }}"
+    insertbefore: BOF
+    create: yes
   notify:
     - Restart Clamd service
   tags:
     - clamav_config
 
 - name: Configure FreshClam
-  template:
-    src: freshclam.conf.j2
-    dest: "{{ clamav_freshclam_file }}"
+  blockinfile:
+    path: "{{ clamav_freshclam_file }}"
+    content: "{{ clamav_freshclam_config | encode_ini(delimiter=' ') }}"
+    insertbefore: BOF
+    create: yes
   tags:
     - clamav_config
 
@@ -214,31 +233,34 @@
     clamav_db_update_run and
     clamav_db_age_check_result.rc or
     clamav_db_update_force
+  register: result
+  until: result is succeeded
+  retries: "{{ clamav_network_max_retries }}"
   tags:
     - clamav_db
 
-- name: Setup Clamd Scan cron job
+- name: "{{ (clamav_scan_cron == true) | ternary('Setup', 'Remove') }} Clamd Scan cron job"
   cron:
     name: Clamd Scan
     special_time: "{{ clamav_scan_cron_time }}"
     job: "{{ clamav_scan_cron_job }}"
-  when: clamav_scan_cron == true
+    state: "{{ (clamav_scan_cron == true) | ternary('present', 'absent') }}"
   tags:
     - clamav_cron
 
-- name: Setup FreshClam cron job
+- name: "{{ (clamav_freshclam_cron == true) | ternary('Setup', 'Remove') }} FreshClam cron job"
   cron:
     name: FreshClam
     special_time: "{{ clamav_freshclam_cron_time }}"
     job: "{{ clamav_freshclam_cron_job }}"
-  when: clamav_freshclam_cron == true
+    state: "{{ (clamav_freshclam_cron == true) | ternary('present', 'absent') }}"
   tags:
     - clamav_cron
 
-- name: Enable ClamAV service
+- name: "{{ (not clamav_client_only) | ternary('Enable', 'Disable') }} ClamAV service"
   service:
     name: "{{ clamav_service }}"
-    enabled: yes
+    enabled: "{{ not clamav_client_only }}"
   tags:
     - clamav_service
 
@@ -247,5 +269,6 @@
     name: "{{ clamav_service }}"
     state: started
   register: clamav_service_started
+  when: not clamav_client_only
   tags:
     - clamav_service

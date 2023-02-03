@@ -7,3 +7,4 @@
   when: >
     clamav_service_started is not defined or
     not clamav_service_started.changed
+    and not clamav_client_only
